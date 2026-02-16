@@ -11,20 +11,35 @@
 	'use strict';
 
 	window.initEpubViewer = function(epubUrl) {
-		$(document).ready(function() {
+		function setHTML(elementId, html) {
+			var element = document.getElementById(elementId);
+			if (element) {
+				element.innerHTML = html;
+			}
+		}
+
+		function onDOMReady(callback) {
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', callback);
+			} else {
+				callback();
+			}
+		}
+
+		onDOMReady(function() {
 			if (typeof JSZip === 'undefined') {
-				$('#epub-viewer').html('<div style="padding: 20px; text-align: center;">Error al cargar las librerías necesarias. Por favor, intente nuevamente.</div>');
+				setHTML('epub-viewer', '<div style="padding: 20px; text-align: center;">Error al cargar las librerías necesarias. Por favor, intente nuevamente.</div>');
 				return;
 			}
 			
 			if (typeof ePub === 'undefined') {
-				$('#epub-viewer').html('<div style="padding: 20px; text-align: center;">Error al cargar el visor de EPUB. Por favor, intente nuevamente.</div>');
+				setHTML('epub-viewer', '<div style="padding: 20px; text-align: center;">Error al cargar el visor de EPUB. Por favor, intente nuevamente.</div>');
 				return;
 			}
 
 			epubUrl = epubUrl + (epubUrl.indexOf('?') > -1 ? '&' : '?') + 'inline=true';
 
-			$('#epub-area').html('<div style="padding: 40px; text-align: center; color: #666;"><div style="font-size: 18px; margin-bottom: 10px;">Cargando EPUB...</div><div>Por favor espere</div></div>');
+			setHTML('epub-area', '<div style="padding: 40px; text-align: center; color: #666;"><div style="font-size: 18px; margin-bottom: 10px;">Cargando EPUB...</div><div>Por favor espere</div></div>');
 
 			fetch(epubUrl, {
 				method: 'GET',
@@ -43,7 +58,10 @@
 				return blob.arrayBuffer();
 			})
 			.then(function(arrayBuffer) {
-				$('#epub-area').empty();
+				var epubArea = document.getElementById('epub-area');
+				if (epubArea) {
+					epubArea.innerHTML = '';
+				}
 				
 				var book = ePub(arrayBuffer);
 				
@@ -56,15 +74,21 @@
 				});
 
 				return rendition.display().then(function() {
-					$('#prev-btn').on('click', function() {
-						rendition.prev();
-					});
+					var prevBtn = document.getElementById('prev-btn');
+					if (prevBtn) {
+						prevBtn.addEventListener('click', function() {
+							rendition.prev();
+						});
+					}
 
-					$('#next-btn').on('click', function() {
-						rendition.next();
-					});
+					var nextBtn = document.getElementById('next-btn');
+					if (nextBtn) {
+						nextBtn.addEventListener('click', function() {
+							rendition.next();
+						});
+					}
 
-					$(document).on('keydown', function(e) {
+					document.addEventListener('keydown', function(e) {
 						if (e.keyCode === 37) {
 							rendition.prev();
 						} else if (e.keyCode === 39) {
@@ -73,12 +97,12 @@
 					});
 
 					book.ready.catch(function(error) {
-						$('#epub-viewer').html('<div style="padding: 20px; text-align: center;">Error al cargar el archivo EPUB. Detalles: ' + error.message + '</div>');
+						setHTML('epub-viewer', '<div style="padding: 20px; text-align: center;">Error al cargar el archivo EPUB. Detalles: ' + error.message + '</div>');
 					});
 				});
 			})
 			.catch(function(error) {
-				$('#epub-viewer').html('<div style="padding: 20px; text-align: center;"><strong>Error al cargar el archivo EPUB</strong><br><br>El archivo puede estar corrupto o en un formato no compatible.<br><br>Detalles: ' + error.message + '</div>');
+				setHTML('epub-viewer', '<div style="padding: 20px; text-align: center;"><strong>Error al cargar el archivo EPUB</strong><br><br>El archivo puede estar corrupto o en un formato no compatible.<br><br>Detalles: ' + error.message + '</div>');
 			});
 		});
 	};
