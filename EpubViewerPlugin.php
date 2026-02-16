@@ -17,6 +17,7 @@ use PKP\plugins\Hook;
 use PKP\plugins\GenericPlugin;
 use APP\core\Application;
 use APP\template\TemplateManager;
+use Exception;
 
 class EpubViewerPlugin extends GenericPlugin
 {
@@ -27,8 +28,8 @@ class EpubViewerPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled($mainContextId)) {
-                Hook::add('ArticleHandler::view::galley', array($this, 'submissionCallback'), HOOK_SEQUENCE_LAST);
-                Hook::add('IssueHandler::view::galley', array($this, 'issueCallback'), HOOK_SEQUENCE_LAST);
+                Hook::add('ArticleHandler::view::galley', array($this, 'submissionCallback'), Hook::SEQUENCE_LAST);
+                Hook::add('IssueHandler::view::galley', array($this, 'issueCallback'), Hook::SEQUENCE_LAST);
                 Hook::add('CatalogBookHandler::view', [$this, 'viewCallback'], Hook::SEQUENCE_LATE);
                 Hook::add('CatalogBookHandler::download', [$this, 'downloadCallback'], Hook::SEQUENCE_LATE);
             }
@@ -95,6 +96,7 @@ class EpubViewerPlugin extends GenericPlugin
                     break;
                 }
             }
+            
             $templateMgr = TemplateManager::getManager($request);
             $templateMgr->assign(array(
                 'displayTemplateResource' => $this->getTemplateResource('display.tpl'),
@@ -123,20 +125,49 @@ class EpubViewerPlugin extends GenericPlugin
         $submissionFile =& $args[3];
 
         if ($submissionFile->getData('mimetype') == 'application/epub+zip') {
+            $filePublication = null;
             foreach ($submission->getData('publications') as $publication) {
                 if ($publication->getId() === $publicationFormat->getData('publicationId')) {
                     $filePublication = $publication;
                     break;
                 }
             }
+            
             $request = Application::get()->getRequest();
+            $application = Application::get();
             $router = $request->getRouter();
             $dispatcher = $request->getDispatcher();
+            
+            $downloadUrl = $router->url(
+                $request,
+                null,
+                'catalog',
+                'download',
+                [$submission->getBestId(), $publicationFormat->getBestId(), $submissionFile->getBestId()]
+            );
+
+            $submissionUrl = $request->url(null, 'catalog', 'book', [$submission->getBestId()]);
+
+            $title = $filePublication ? $filePublication->getLocalizedTitle(null, 'html') : '';
+
+            $datePublished = __('submission.outdatedVersion', [
+                'datePublished' => $filePublication->getData('datePublished'),
+                'urlRecentVersion' => $submissionUrl,
+            ]);
+            
             $templateMgr = TemplateManager::getManager($request);
             $templateMgr->assign(array(
                 'pluginUrl' => $request->getBaseUrl() . '/' . $this->getPluginPath(),
                 'isLatestPublication' => $submission->getData('currentPublicationId') === $publicationFormat->getData('publicationId'),
                 'filePublication' => $filePublication,
+                'publishedSubmission' => $submission,
+                'publicationFormat' => $publicationFormat,
+                'submissionFile' => $submissionFile,
+                'downloadUrl' => $downloadUrl,
+                'parentUrl' => $submissionUrl,
+                'title' => $title,
+                'datePublished' => $datePublished,
+                'isTitleHtml' => true,
             ));
 
             $templateMgr->display($this->getTemplateResource('display.tpl'));
@@ -174,9 +205,10 @@ class EpubViewerPlugin extends GenericPlugin
         $issue =& $args[1];
         $galley =& $args[2];
 
-        $templateMgr = TemplateManager::getManager($request);
         if ($galley && $galley->getFileType() == 'application/epub+zip') {
             $application = Application::get();
+            $templateMgr = TemplateManager::getManager($request);
+            
             $templateMgr->assign(array(
                 'displayTemplateResource' => $this->getTemplateResource('display.tpl'),
                 'pluginUrl' => $request->getBaseUrl() . '/' . $this->getPluginPath(),

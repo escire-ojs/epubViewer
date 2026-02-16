@@ -5,6 +5,8 @@
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * Embedded viewing of a EPUB galley.
+ *
+ * @hook Templates::Common::Footer::PageFooter []
  *}
 <!DOCTYPE html>
 <html lang="{$currentLocale|replace:"_":"-"}" xml:lang="{$currentLocale|replace:"_":"-"}">
@@ -14,15 +16,24 @@
 	{$application = Application::get()}
 	<title>
 		{if $application->getName() === 'omp'}
-			{translate key="catalog.viewableFile.title" type=$publicationFormat->getLocalizedName()|escape title=$submissionFile->getLocalizedData('name')|escape}
+			{if $isTitleHtml}
+				{translate key="catalog.viewableFile.title" type=$publicationFormat->getLocalizedName()|escape title=$title|strip_tags|escape}
+			{else}
+				{translate key="catalog.viewableFile.title" type=$publicationFormat->getLocalizedName()|escape title=$title|escape}
+			{/if}
 		{else}
-			{translate key="article.pageTitle" title=$title|escape}
-		{/if} 
+			{if $isTitleHtml}
+				{translate key="article.pageTitle" title=$title|strip_tags|escape}
+			{else}
+				{translate key="article.pageTitle" title=$title|escape}
+			{/if}
+		{/if}
 	</title>
 
 	{load_header context="frontend" headers=$headers}
 	{load_stylesheet context="frontend" stylesheets=$stylesheets}
 	{load_script context="frontend" scripts=$scripts}
+	<link rel="stylesheet" href="{$pluginUrl}/vendor/bibi/bibi/bibi/resources/styles/bibi.css" />
 </head>
 
 <body class="pkp_page_{$requestedPage|escape} pkp_op_{$requestedOp|escape}">
@@ -31,17 +42,19 @@
 		{* Header wrapper *}
 		<header class="header_viewable_file">
 
-			{capture assign="submissionUrl"}{url op="book" path=$publishedSubmission->getBestId()}{/capture}
-
-			<a href="{$submissionUrl}" class="return">
+			<a href="{$parentUrl}" class="return">
 				<span class="pkp_screen_reader">
 					{translate key="catalog.viewableFile.return" monographTitle=$publishedSubmission->getLocalizedTitle()|escape}
 				</span>
 			</a>
 
-			<span class="title">
-				{$submissionFile->getLocalizedData('name')|escape}
-			</span>
+			<a href="{$parentUrl}" class="title">
+				{if $isTitleHtml}
+					{$title|strip_unsafe_html}
+				{else}
+					{$title|escape}
+				{/if}
+			</a>
 
 			<a href="{$downloadUrl|escape}" class="download" download>
 				<span class="label">
@@ -67,7 +80,11 @@
 			</a>
 
 			<a href="{$parentUrl}" class="title">
-				{$title|escape}
+				{if $isTitleHtml}
+					{$title|strip_unsafe_html}
+				{else}
+					{$title|escape}
+				{/if}
 			</a>
 
 			<a href="{$epubUrl}" class="download" download>
@@ -82,9 +99,26 @@
 		</header>
 	{/if}
 
+	<div id="epubCanvasContainer" class="galley_view{if !$isLatestPublication} galley_view_with_notice{/if}">
+		{if !$isLatestPublication}
+			<div class="galley_view_notice">
+				<div class="galley_view_notice_message" role="alert">
+					{$datePublished}
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<script src="{$pluginUrl}/vendor/bibi/bibi/bibi/and/jo.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function() {ldelim} 
 			const Jo = window['bibi:jo'];
+			
+			if (!Jo) {
+				console.error('Bibi library (jo.js) failed to load');
+				return;
+			}
+			
 			var urlBase = "{$pluginUrl}/vendor/bibi/bibi/bibi/index.html?book=";
 
 			var epubUrl;
@@ -108,18 +142,6 @@
 			
 		{rdelim});
 	</script>
-
-	<link rel="stylesheet" href="{$pluginUrl}/vendor/bibi/bibi/bibi/resources/styles/bibi.css" />
-	<div id="epubCanvasContainer" class="galley_view{if !$isLatestPublication} galley_view_with_notice{/if}">
-		{if !$isLatestPublication}
-			<div class="galley_view_notice">
-				<div class="galley_view_notice_message" role="alert">
-					{$datePublished}
-				</div>
-			</div>
-		{/if}
-		<script src="{$pluginUrl}/vendor/bibi/bibi/bibi/and/jo.js"></script>
-	</div>
 	{call_hook name="Templates::Common::Footer::PageFooter"}
 </body>
 </html>
