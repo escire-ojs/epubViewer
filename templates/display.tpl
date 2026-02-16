@@ -33,7 +33,10 @@
 	{load_header context="frontend" headers=$headers}
 	{load_stylesheet context="frontend" stylesheets=$stylesheets}
 	{load_script context="frontend" scripts=$scripts}
-	<link rel="stylesheet" href="{$pluginUrl}/vendor/bibi/bibi/bibi/resources/styles/bibi.css" />
+	<link rel="stylesheet" href="{$pluginUrl}/css/epubViewer.css" />
+	<script src="{$pluginUrl}/js/jszip.min.js"></script>
+	<script src="{$pluginUrl}/js/epub.min.js"></script>
+	<script src="{$pluginUrl}/js/epubViewer.js"></script>
 </head>
 
 <body class="pkp_page_{$requestedPage|escape} pkp_op_{$requestedOp|escape}">
@@ -99,7 +102,7 @@
 		</header>
 	{/if}
 
-	<div id="epubCanvasContainer" class="galley_view{if !$isLatestPublication} galley_view_with_notice{/if}">
+	<div class="galley_view{if !$isLatestPublication} galley_view_with_notice{/if}">
 		{if !$isLatestPublication}
 			<div class="galley_view_notice">
 				<div class="galley_view_notice_message" role="alert">
@@ -107,40 +110,24 @@
 				</div>
 			</div>
 		{/if}
+		<div id="epub-viewer">
+			<div id="epub-area"></div>
+			<div id="epub-controls">
+				<button id="prev-btn">← Anterior</button>
+				<button id="next-btn">Siguiente →</button>
+			</div>
+		</div>
 	</div>
 
-	<script src="{$pluginUrl}/vendor/bibi/bibi/bibi/and/jo.js"></script>
 	<script type="text/javascript">
-		$(document).ready(function() {ldelim} 
-			const Jo = window['bibi:jo'];
-			
-			if (!Jo) {
-				console.error('Bibi library (jo.js) failed to load');
-				return;
-			}
-			
-			var urlBase = "{$pluginUrl}/vendor/bibi/bibi/bibi/index.html?book=";
-
-			var epubUrl;
-			{if $application->getName() === "omp"}
-				epubUrl = {$downloadUrl|json_encode} + ".epub";
-			{else} 
-				epubUrl = {$epubUrl|json_encode} + "/file.epub";
-			{/if}
-
-			const OneMoreBibi = new Jo.Bibi({
-				'bibi-href': urlBase + encodeURIComponent(epubUrl),
-				'bibi-style': 'width: 100%; height: 480px;',
-				'bibi-view': 'paged',
-				'bibi-view-unchangeable': 'yes',
-				'bibi-autostart': 'yes',
-				'bibi-receive': ['bibi:flipped', 'bibi:got-to-the-beginning', 'bibi:got-to-the-end']
-			});
-			
-			$("body").append(OneMoreBibi.Frame);
-			$(".bibi-frame").css("height","97vh");
-			
-		{rdelim});
+		var epubUrl;
+		{if $application->getName() === "omp"}
+			epubUrl = {$downloadUrl|json_encode};
+		{else} 
+			epubUrl = {$epubUrl|json_encode};
+		{/if}
+		
+		initEpubViewer(epubUrl);
 	</script>
 	{call_hook name="Templates::Common::Footer::PageFooter"}
 </body>

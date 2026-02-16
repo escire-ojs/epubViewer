@@ -17,6 +17,7 @@ use PKP\plugins\Hook;
 use PKP\plugins\GenericPlugin;
 use APP\core\Application;
 use APP\template\TemplateManager;
+use PKP\config\Config;
 use Exception;
 
 class EpubViewerPlugin extends GenericPlugin
@@ -29,7 +30,9 @@ class EpubViewerPlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled($mainContextId)) {
                 Hook::add('ArticleHandler::view::galley', array($this, 'submissionCallback'), Hook::SEQUENCE_LAST);
+                Hook::add('ArticleHandler::download', array($this, 'articleDownloadCallback'), Hook::SEQUENCE_LATE);
                 Hook::add('IssueHandler::view::galley', array($this, 'issueCallback'), Hook::SEQUENCE_LAST);
+                Hook::add('IssueHandler::download', array($this, 'issueDownloadCallback'), Hook::SEQUENCE_LATE);
                 Hook::add('CatalogBookHandler::view', [$this, 'viewCallback'], Hook::SEQUENCE_LATE);
                 Hook::add('CatalogBookHandler::download', [$this, 'downloadCallback'], Hook::SEQUENCE_LATE);
             }
@@ -135,10 +138,8 @@ class EpubViewerPlugin extends GenericPlugin
             
             $request = Application::get()->getRequest();
             $application = Application::get();
-            $router = $request->getRouter();
-            $dispatcher = $request->getDispatcher();
             
-            $downloadUrl = $router->url(
+            $downloadUrl = $request->getRouter()->url(
                 $request,
                 null,
                 'catalog',
@@ -147,9 +148,7 @@ class EpubViewerPlugin extends GenericPlugin
             );
 
             $submissionUrl = $request->url(null, 'catalog', 'book', [$submission->getBestId()]);
-
             $title = $filePublication ? $filePublication->getLocalizedTitle(null, 'html') : '';
-
             $datePublished = __('submission.outdatedVersion', [
                 'datePublished' => $filePublication->getData('datePublished'),
                 'urlRecentVersion' => $submissionUrl,
@@ -177,6 +176,73 @@ class EpubViewerPlugin extends GenericPlugin
         return false;
     }
 
+    public function articleDownloadCallback($hookName, $params)
+    {
+        $article =& $params[1];
+        $galley =& $params[2];
+        $submissionFile =& $params[3];
+        $inline =& $params[4];
+
+        $request = Application::get()->getRequest();
+        
+        if ($submissionFile && $submissionFile->getData('mimetype') == 'application/epub+zip' && $request->getUserVar('inline')) {
+            $inline = true;
+            $filePath = Config::getVar('files', 'files_dir') . '/' . $submissionFile->getData('path');
+            
+            if (file_exists($filePath)) {
+                while (ob_get_level()) {
+                    ob_end_clean();
+                }
+                
+                header('Content-Type: application/epub+zip');
+                header('Content-Length: ' . filesize($filePath));
+                header('Content-Disposition: inline; filename="' . basename($submissionFile->getData('path')) . '"');
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: public');
+                
+                readfile($filePath);
+                exit();
+            }
+        }
+
+        return false;
+    }
+
+    public function issueDownloadCallback($hookName, $params)
+    {
+        $issue =& $params[1];
+        $galley =& $params[2];
+        $inline =& $params[3];
+
+        $request = Application::get()->getRequest();
+        
+        if ($galley && $galley->getFileType() == 'application/epub+zip' && $request->getUserVar('inline')) {
+            $inline = true;
+            $issueFile = $galley->getFile();
+            
+            if ($issueFile && $issueFile->getData('path')) {
+                $filePath = Config::getVar('files', 'files_dir') . '/' . $issueFile->getData('path');
+                
+                if (file_exists($filePath)) {
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                    
+                    header('Content-Type: application/epub+zip');
+                    header('Content-Length: ' . filesize($filePath));
+                    header('Content-Disposition: inline; filename="' . basename($issueFile->getData('path')) . '"');
+                    header('Cache-Control: private, max-age=0, must-revalidate');
+                    header('Pragma: public');
+                    
+                    readfile($filePath);
+                    exit();
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function downloadCallback($hookName, $params)
     {
         $submission =& $params[1];
@@ -185,9 +251,25 @@ class EpubViewerPlugin extends GenericPlugin
         $inline =& $params[4];
 
         $request = Application::get()->getRequest();
-        $mimetype = $submissionFile->getData('mimetype');
-        if ($mimetype == 'application/epub+zip' && $request->getUserVar('inline')) {
+        
+        if ($submissionFile->getData('mimetype') == 'application/epub+zip' && $request->getUserVar('inline')) {
             $inline = true;
+            $filePath = Config::getVar('files', 'files_dir') . '/' . $submissionFile->getData('path');
+            
+            if (file_exists($filePath)) {
+                while (ob_get_level()) {
+                    ob_end_clean();
+                }
+                
+                header('Content-Type: application/epub+zip');
+                header('Content-Length: ' . filesize($filePath));
+                header('Content-Disposition: inline; filename="' . basename($submissionFile->getData('path')) . '"');
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: public');
+                
+                readfile($filePath);
+                exit();
+            }
         }
 
         return false;

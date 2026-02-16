@@ -10,4 +10,4 @@
 {capture assign="parentUrl"}{url page="issue" op="view" path=$issue->getBestIssueId()}{/capture}
 {capture assign="galleyTitle"}{translate key="submission.representationOfTitle" representation=$galley->getLabel() title=$issue->getIssueIdentification()|escape}{/capture}
 {capture assign="datePublished"}{translate key="submission.outdatedVersion" datePublished=$issue->getData('datePublished') urlRecentVersion=$parentUrl}{/capture}
-{include file=$displayTemplateResource title=$issue->getIssueIdentification() parentUrl=$parentUrl epubUrl=$epubUrl galleyTitle=$galleyTitle datePublished=$datePublished parent=$issue isTitleHtml=false}
+{include file=$displayTemplateResource title=$issue->getIssueIdentification() parentUrl=$parentUrl epubUrl=$epubUrl galleyTitle=$galleyTitle datePublished=$datePublished parent=$issue isTitleHtml=false pluginUrl=$pluginUrl}
