@@ -1,18 +1,18 @@
-# Bibi Epub Viewer Plugin
+# JS Epub Viewer Plugin
 
 ## About
-A plugin to viewing embedded EPUBs in [Open Journal Systems](https://github.com/pkp/ojs) and [Open Monograph Press](https://github.com/pkp/omp) using [Bibi Epub Reader](https://github.com/satorumurmur/bibi).
+A plugin to viewing embedded EPUBs in [Open Journal Systems](https://github.com/pkp/ojs) and [Open Monograph Press](https://github.com/pkp/omp) using [JS Epub Reader](https://github.com/futurepress/epub.js).
 
-Unfortunately, the [EPUB Bibi](https://github.com/satorumurmur/bibi) reader that this plugin offers has not been updated for many years, so we no longer update this plugin.
+Unfortunately, the [EPUB JS](https://github.com/futurepress/epub.js) reader that this plugin offers has not been updated for many years, so we no longer update this plugin.
 
 ## License
 This plugin is licensed under the GNU General Public License v3. See the file
 LICENSE for the complete terms of this license.
 
-Includes Bibi Epub Reader which has an [MIT open source license and other dependencies](https://github.com/satorumurmur/bibi#license).
+Includes JS Epub Reader which has an [MIT open source license and other dependencies](https://github.com/futurepress/epub.js#license).
 
 ## Install
- * Go to Settings -> Website -> Plugins ->  Plugin Gallery -> Click in **Bibi EPUB Viewer Plugin** -> Install.
+ * Go to Settings -> Website -> Plugins ->  Plugin Gallery -> Click in **JS EPUB Viewer Plugin** -> Install.
  * In next page, enable the plugin.
 
 ## Compatibility

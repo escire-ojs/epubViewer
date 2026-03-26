@@ -27,7 +27,7 @@ jobs:
           current_date=$(date +'%Y-%m-%d')
           if [ $date_version != $current_date ]; then exit 1; fi
         shell: bash
-      - name: Install Bibi dependency
+      - name: Install JS dependency
         run: |
           composer install
         shell: bash
